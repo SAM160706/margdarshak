@@ -30,14 +30,12 @@ import com.example.myandroidapp.ui.screens.BuildingDetailScreen
 import com.example.myandroidapp.ui.screens.MainHubScreen
 import com.example.myandroidapp.ui.screens.NavigationScreen
 import com.example.myandroidapp.ui.screens.LoginScreen
-import com.example.myandroidapp.ui.screens.OtpVerificationScreen
 import com.example.myandroidapp.ui.theme.MyAndroidAppTheme
 import kotlinx.coroutines.delay
 
 sealed interface Screen {
     object Splash : Screen
     object Login : Screen
-    data class OtpVerification(val mobileNumber: String, val verificationId: String) : Screen
     object MainHub : Screen
     data class BuildingDetail(val building: Building) : Screen
     data class Navigation(val service: Service, val building: Building) : Screen
@@ -66,23 +64,10 @@ class MainActivity : ComponentActivity() {
                         }
                         is Screen.Login -> {
                             LoginScreen(
-                                onVerificationSent = { mobile, verificationId ->
-                                    currentScreen = Screen.OtpVerification(mobile, verificationId)
-                                }
-                            )
-                        }
-                        is Screen.OtpVerification -> {
-                            BackHandler {
-                                currentScreen = Screen.Login
-                            }
-                            OtpVerificationScreen(
-                                mobileNumber = screen.mobileNumber,
-                                verificationId = screen.verificationId,
-                                onVerificationSuccess = {
+                                currentLanguage = currentLanguage,
+                                onLanguageChange = { currentLanguage = it },
+                                onLoginSuccess = {
                                     currentScreen = Screen.MainHub
-                                },
-                                onBackToLogin = {
-                                    currentScreen = Screen.Login
                                 }
                             )
                         }

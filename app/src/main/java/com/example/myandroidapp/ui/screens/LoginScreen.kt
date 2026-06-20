@@ -1,13 +1,19 @@
 package com.example.myandroidapp.ui.screens
 
-import android.app.Activity
-import android.util.Log
 import android.widget.Toast
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,24 +24,116 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myandroidapp.R
-import com.google.firebase.FirebaseException
+import com.example.myandroidapp.data.Language
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthOptions
-import com.google.firebase.auth.PhoneAuthProvider
-import java.util.concurrent.TimeUnit
+
+enum class LoginStringKey {
+    TITLE,
+    SUBTITLE_LOGIN,
+    SUBTITLE_SIGNUP,
+    EMAIL_LABEL,
+    EMAIL_PLACEHOLDER,
+    PASSWORD_LABEL,
+    PASSWORD_PLACEHOLDER,
+    CONFIRM_PASSWORD_LABEL,
+    CONFIRM_PASSWORD_PLACEHOLDER,
+    LOGIN_BUTTON,
+    SIGNUP_BUTTON,
+    SWITCH_TO_SIGNUP,
+    SWITCH_TO_LOGIN,
+    ERROR_INVALID_EMAIL,
+    ERROR_SHORT_PASSWORD,
+    ERROR_MATCH_PASSWORD,
+    SUCCESS_LOGIN,
+    SUCCESS_REGISTER
+}
+
+fun getLoginString(key: LoginStringKey, lang: Language): String {
+    return when (lang) {
+        Language.ENGLISH -> when (key) {
+            LoginStringKey.TITLE -> "Margdarshak Login"
+            LoginStringKey.SUBTITLE_LOGIN -> "Enter your credentials to access Margdarshak"
+            LoginStringKey.SUBTITLE_SIGNUP -> "Create an account to access Margdarshak"
+            LoginStringKey.EMAIL_LABEL -> "Email Address"
+            LoginStringKey.EMAIL_PLACEHOLDER -> "yourname@email.com"
+            LoginStringKey.PASSWORD_LABEL -> "Password"
+            LoginStringKey.PASSWORD_PLACEHOLDER -> "Enter password"
+            LoginStringKey.CONFIRM_PASSWORD_LABEL -> "Confirm Password"
+            LoginStringKey.CONFIRM_PASSWORD_PLACEHOLDER -> "Confirm your password"
+            LoginStringKey.LOGIN_BUTTON -> "Login"
+            LoginStringKey.SIGNUP_BUTTON -> "Sign Up"
+            LoginStringKey.SWITCH_TO_SIGNUP -> "Don't have an account? Sign Up"
+            LoginStringKey.SWITCH_TO_LOGIN -> "Already have an account? Login"
+            LoginStringKey.ERROR_INVALID_EMAIL -> "Please enter a valid email address"
+            LoginStringKey.ERROR_SHORT_PASSWORD -> "Password must be at least 6 characters"
+            LoginStringKey.ERROR_MATCH_PASSWORD -> "Passwords do not match"
+            LoginStringKey.SUCCESS_LOGIN -> "Login Successful!"
+            LoginStringKey.SUCCESS_REGISTER -> "Account Created Successfully!"
+        }
+        Language.HINDI -> when (key) {
+            LoginStringKey.TITLE -> "मार्गदर्शक लॉगिन"
+            LoginStringKey.SUBTITLE_LOGIN -> "मार्गदर्शक का उपयोग करने के लिए अपने क्रेडेंशियल दर्ज करें"
+            LoginStringKey.SUBTITLE_SIGNUP -> "मार्गदर्शक का उपयोग करने के लिए एक खाता बनाएं"
+            LoginStringKey.EMAIL_LABEL -> "ईमेल पता"
+            LoginStringKey.EMAIL_PLACEHOLDER -> "yourname@email.com"
+            LoginStringKey.PASSWORD_LABEL -> "पासवर्ड"
+            LoginStringKey.PASSWORD_PLACEHOLDER -> "पासवर्ड दर्ज करें"
+            LoginStringKey.CONFIRM_PASSWORD_LABEL -> "पासवर्ड की पुष्टि करें"
+            LoginStringKey.CONFIRM_PASSWORD_PLACEHOLDER -> "अपने पासवर्ड की पुष्टि करें"
+            LoginStringKey.LOGIN_BUTTON -> "लॉगिन"
+            LoginStringKey.SIGNUP_BUTTON -> "साइन अप करें"
+            LoginStringKey.SWITCH_TO_SIGNUP -> "खाता नहीं है? साइन अप करें"
+            LoginStringKey.SWITCH_TO_LOGIN -> "पहले से ही खाता है? लॉगिन करें"
+            LoginStringKey.ERROR_INVALID_EMAIL -> "कृपया एक वैध ईमेल पता दर्ज करें"
+            LoginStringKey.ERROR_SHORT_PASSWORD -> "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए"
+            LoginStringKey.ERROR_MATCH_PASSWORD -> "पासवर्ड मेल नहीं खाते"
+            LoginStringKey.SUCCESS_LOGIN -> "लॉगिन सफल रहा!"
+            LoginStringKey.SUCCESS_REGISTER -> "खाता सफलतापूर्वक बनाया गया!"
+        }
+        Language.MARATHI -> when (key) {
+            LoginStringKey.TITLE -> "मार्गदर्शक लॉगिन"
+            LoginStringKey.SUBTITLE_LOGIN -> "मार्गदर्शकामध्ये प्रवेश करण्यासाठी तुमचे क्रेडेंशियल प्रविष्ट करा"
+            LoginStringKey.SUBTITLE_SIGNUP -> "मार्गदर्शकामध्ये प्रवेश करण्यासाठी एक खाते तयार करा"
+            LoginStringKey.EMAIL_LABEL -> "ईमेल पत्ता"
+            LoginStringKey.EMAIL_PLACEHOLDER -> "yourname@email.com"
+            LoginStringKey.PASSWORD_LABEL -> "पासवर्ड"
+            LoginStringKey.PASSWORD_PLACEHOLDER -> "पासवर्ड प्रविष्ट करा"
+            LoginStringKey.CONFIRM_PASSWORD_LABEL -> "पासवर्डची पुष्टी करा"
+            LoginStringKey.CONFIRM_PASSWORD_PLACEHOLDER -> "तुमच्या पासवर्डची पुष्टी करा"
+            LoginStringKey.LOGIN_BUTTON -> "लॉगिन"
+            LoginStringKey.SIGNUP_BUTTON -> "साइन अप करा"
+            LoginStringKey.SWITCH_TO_SIGNUP -> "खाते नाही? साइन अप करा"
+            LoginStringKey.SWITCH_TO_LOGIN -> "आधीच खाते आहे? लॉगिन करा"
+            LoginStringKey.ERROR_INVALID_EMAIL -> "कृपया वैध ईमेल पत्ता प्रविष्ट करा"
+            LoginStringKey.ERROR_SHORT_PASSWORD -> "पासवर्ड किमान 6 अक्षरांचा असावा"
+            LoginStringKey.ERROR_MATCH_PASSWORD -> "पासवर्ड जुळत नाहीत"
+            LoginStringKey.SUCCESS_LOGIN -> "लॉगिन यशस्वी झाले!"
+            LoginStringKey.SUCCESS_REGISTER -> "खाते यशस्वीरित्या तयार केले गेले!"
+        }
+    }
+}
 
 @Composable
 fun LoginScreen(
-    onVerificationSent: (mobileNumber: String, verificationId: String) -> Unit
+    currentLanguage: Language,
+    onLanguageChange: (Language) -> Unit,
+    onLoginSuccess: () -> Unit
 ) {
-    var mobileNumber by remember { mutableStateOf("") }
+    var isSignUpMode by remember { mutableStateOf(false) }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isConfirmPasswordVisible by remember { mutableStateOf(false) }
+    
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-
+    
     val context = LocalContext.current
     val auth = remember { FirebaseAuth.getInstance() }
 
@@ -53,36 +151,51 @@ fun LoginScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
+        // Language Toggle at top right (or centered top)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 48.dp, end = 24.dp)
+        ) {
+            LanguageToggle(
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange
+            )
+        }
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .padding(horizontal = 24.dp)
+                .padding(top = 80.dp) // Avoid overlapping with language toggle
         ) {
             // App Logo
             Image(
                 painter = painterResource(id = R.drawable.logo_margdarshak),
                 contentDescription = "Margdarshak Logo",
-                modifier = Modifier
-                    .size(120.dp)
+                modifier = Modifier.size(110.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Margdarshak Login",
+                text = getLoginString(LoginStringKey.TITLE, currentLanguage),
                 fontWeight = FontWeight.Black,
                 fontSize = 24.sp,
                 color = Color(0xFFE65100),
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 6.dp)
             )
 
             Text(
-                text = "Enter your mobile number to receive a verification OTP code",
-                fontSize = 14.sp,
+                text = getLoginString(
+                    if (isSignUpMode) LoginStringKey.SUBTITLE_SIGNUP else LoginStringKey.SUBTITLE_LOGIN,
+                    currentLanguage
+                ),
+                fontSize = 13.sp,
                 color = Color.DarkGray,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier.padding(bottom = 20.dp)
             )
 
             if (errorMessage.isNotEmpty()) {
@@ -94,19 +207,17 @@ fun LoginScreen(
                 )
             }
 
-            // Mobile Number Input Field with +91 Country Code
+            // Email Field
             OutlinedTextField(
-                value = mobileNumber,
+                value = email,
                 onValueChange = {
-                    if (it.length <= 10 && it.all { char -> char.isDigit() }) {
-                        mobileNumber = it
-                    }
+                    email = it
+                    errorMessage = ""
                 },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Mobile Number") },
-                placeholder = { Text("10-digit number") },
-                prefix = { Text("+91 ", fontWeight = FontWeight.Bold, color = Color(0xFFE65100)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                label = { Text(getLoginString(LoginStringKey.EMAIL_LABEL, currentLanguage)) },
+                placeholder = { Text(getLoginString(LoginStringKey.EMAIL_PLACEHOLDER, currentLanguage)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -116,55 +227,120 @@ fun LoginScreen(
                 )
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Password Field
+            OutlinedTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    errorMessage = ""
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(getLoginString(LoginStringKey.PASSWORD_LABEL, currentLanguage)) },
+                placeholder = { Text(getLoginString(LoginStringKey.PASSWORD_PLACEHOLDER, currentLanguage)) },
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                trailingIcon = {
+                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                        Icon(
+                            imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            contentDescription = "Toggle password visibility",
+                            tint = Color.Gray
+                        )
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFFE65100),
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f),
+                    focusedLabelColor = Color(0xFFE65100)
+                )
+            )
+
+            if (isSignUpMode) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Confirm Password Field
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = {
+                        confirmPassword = it
+                        errorMessage = ""
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(getLoginString(LoginStringKey.CONFIRM_PASSWORD_LABEL, currentLanguage)) },
+                    placeholder = { Text(getLoginString(LoginStringKey.CONFIRM_PASSWORD_PLACEHOLDER, currentLanguage)) },
+                    visualTransformation = if (isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    trailingIcon = {
+                        IconButton(onClick = { isConfirmPasswordVisible = !isConfirmPasswordVisible }) {
+                            Icon(
+                                imageVector = if (isConfirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                contentDescription = "Toggle password visibility",
+                                tint = Color.Gray
+                            )
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFFE65100),
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f),
+                        focusedLabelColor = Color(0xFFE65100)
+                    )
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Action Button
             Button(
                 onClick = {
-                    if (mobileNumber.length != 10) {
-                        errorMessage = "Please enter a valid 10-digit mobile number"
+                    val emailTrimmed = email.trim()
+                    if (emailTrimmed.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(emailTrimmed).matches()) {
+                        errorMessage = getLoginString(LoginStringKey.ERROR_INVALID_EMAIL, currentLanguage)
+                    } else if (password.length < 6) {
+                        errorMessage = getLoginString(LoginStringKey.ERROR_SHORT_PASSWORD, currentLanguage)
+                    } else if (isSignUpMode && password != confirmPassword) {
+                        errorMessage = getLoginString(LoginStringKey.ERROR_MATCH_PASSWORD, currentLanguage)
                     } else {
                         isLoading = true
                         errorMessage = ""
-
-                        val fullNumber = "+91$mobileNumber"
-                        val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-                            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                                auth.signInWithCredential(credential)
-                                    .addOnCompleteListener { task ->
-                                        isLoading = false
-                                        if (task.isSuccessful) {
-                                            onVerificationSent(mobileNumber, "") // Instant verify success
-                                        } else {
-                                            errorMessage = task.exception?.message ?: "Verification failed"
-                                        }
+                        if (isSignUpMode) {
+                            // Firebase Create User
+                            auth.createUserWithEmailAndPassword(emailTrimmed, password)
+                                .addOnCompleteListener { task ->
+                                    isLoading = false
+                                    if (task.isSuccessful) {
+                                        Toast.makeText(
+                                            context,
+                                            getLoginString(LoginStringKey.SUCCESS_REGISTER, currentLanguage),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        onLoginSuccess()
+                                    } else {
+                                        errorMessage = task.exception?.localizedMessage ?: "Registration failed."
                                     }
-                            }
-
-                            override fun onVerificationFailed(e: FirebaseException) {
-                                isLoading = false
-                                errorMessage = e.message ?: "Authentication failed. Try again."
-                                Log.e("FirebaseAuth", "Phone verification failed", e)
-                            }
-
-                            override fun onCodeSent(
-                                verificationId: String,
-                                token: PhoneAuthProvider.ForceResendingToken
-                            ) {
-                                isLoading = false
-                                Toast.makeText(context, "OTP Sent Successfully", Toast.LENGTH_SHORT).show()
-                                onVerificationSent(mobileNumber, verificationId)
-                            }
+                                }
+                        } else {
+                            // Firebase Sign In
+                            auth.signInWithEmailAndPassword(emailTrimmed, password)
+                                .addOnCompleteListener { task ->
+                                    isLoading = false
+                                    if (task.isSuccessful) {
+                                        Toast.makeText(
+                                            context,
+                                            getLoginString(LoginStringKey.SUCCESS_LOGIN, currentLanguage),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        onLoginSuccess()
+                                    } else {
+                                        errorMessage = task.exception?.localizedMessage ?: "Login failed."
+                                    }
+                                }
                         }
-
-                        val options = PhoneAuthOptions.newBuilder(auth)
-                            .setPhoneNumber(fullNumber)
-                            .setTimeout(60L, TimeUnit.SECONDS)
-                            .setActivity(context as Activity)
-                            .setCallbacks(callbacks)
-                            .build()
-
-                        PhoneAuthProvider.verifyPhoneNumber(options)
                     }
                 },
                 modifier = Modifier
@@ -177,9 +353,36 @@ fun LoginScreen(
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Request OTP", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        text = getLoginString(
+                            if (isSignUpMode) LoginStringKey.SIGNUP_BUTTON else LoginStringKey.LOGIN_BUTTON,
+                            currentLanguage
+                        ),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Switch between Login and SignUp
+            Text(
+                text = getLoginString(
+                    if (isSignUpMode) LoginStringKey.SWITCH_TO_LOGIN else LoginStringKey.SWITCH_TO_SIGNUP,
+                    currentLanguage
+                ),
+                color = Color(0xFFE65100),
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .clickable {
+                        isSignUpMode = !isSignUpMode
+                        errorMessage = ""
+                    }
+                    .padding(8.dp)
+            )
         }
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,7 +51,13 @@ enum class LoginStringKey {
     ERROR_SHORT_PASSWORD,
     ERROR_MATCH_PASSWORD,
     SUCCESS_LOGIN,
-    SUCCESS_REGISTER
+    SUCCESS_REGISTER,
+    FORGOT_PASSWORD,
+    RESET_TITLE,
+    RESET_DESC,
+    RESET_LINK_SENT,
+    CANCEL,
+    SEND_LINK
 }
 
 fun getLoginString(key: LoginStringKey, lang: Language): String {
@@ -74,6 +81,12 @@ fun getLoginString(key: LoginStringKey, lang: Language): String {
             LoginStringKey.ERROR_MATCH_PASSWORD -> "Passwords do not match"
             LoginStringKey.SUCCESS_LOGIN -> "Login Successful!"
             LoginStringKey.SUCCESS_REGISTER -> "Account Created Successfully!"
+            LoginStringKey.FORGOT_PASSWORD -> "Forgot Password?"
+            LoginStringKey.RESET_TITLE -> "Reset Password"
+            LoginStringKey.RESET_DESC -> "Enter your email address to receive a password reset link."
+            LoginStringKey.RESET_LINK_SENT -> "Reset link sent to your email!"
+            LoginStringKey.CANCEL -> "Cancel"
+            LoginStringKey.SEND_LINK -> "Send Link"
         }
         Language.HINDI -> when (key) {
             LoginStringKey.TITLE -> "मार्गदर्शक लॉगिन"
@@ -94,6 +107,12 @@ fun getLoginString(key: LoginStringKey, lang: Language): String {
             LoginStringKey.ERROR_MATCH_PASSWORD -> "पासवर्ड मेल नहीं खाते"
             LoginStringKey.SUCCESS_LOGIN -> "लॉगिन सफल रहा!"
             LoginStringKey.SUCCESS_REGISTER -> "खाता सफलतापूर्वक बनाया गया!"
+            LoginStringKey.FORGOT_PASSWORD -> "पासवर्ड भूल गए?"
+            LoginStringKey.RESET_TITLE -> "पासवर्ड रीसेट करें"
+            LoginStringKey.RESET_DESC -> "पासवर्ड रीसेट लिंक प्राप्त करने के लिए अपना ईमेल पता दर्ज करें।"
+            LoginStringKey.RESET_LINK_SENT -> "आपके ईमेल पर रीसेट लिंक भेजा गया है!"
+            LoginStringKey.CANCEL -> "रद्द करें"
+            LoginStringKey.SEND_LINK -> "लिंक भेजें"
         }
         Language.MARATHI -> when (key) {
             LoginStringKey.TITLE -> "मार्गदर्शक लॉगिन"
@@ -114,6 +133,12 @@ fun getLoginString(key: LoginStringKey, lang: Language): String {
             LoginStringKey.ERROR_MATCH_PASSWORD -> "पासवर्ड जुळत नाहीत"
             LoginStringKey.SUCCESS_LOGIN -> "लॉगिन यशस्वी झाले!"
             LoginStringKey.SUCCESS_REGISTER -> "खाते यशस्वीरित्या तयार केले गेले!"
+            LoginStringKey.FORGOT_PASSWORD -> "पासवर्ड विसरलात?"
+            LoginStringKey.RESET_TITLE -> "पासवर्ड रीसेट करा"
+            LoginStringKey.RESET_DESC -> "पासवर्ड रीसेट लिंक प्राप्त करण्यासाठी तुमचा ईमेल पत्ता प्रविष्ट करा."
+            LoginStringKey.RESET_LINK_SENT -> "तुमच्या ईमेलवर रीसेट लिंक पाठवली आहे!"
+            LoginStringKey.CANCEL -> "रद्द करा"
+            LoginStringKey.SEND_LINK -> "लिंक पाठवा"
         }
     }
 }
@@ -124,6 +149,8 @@ fun LoginScreen(
     onLanguageChange: (Language) -> Unit,
     onLoginSuccess: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    
     var isSignUpMode by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -134,32 +161,45 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     
+    // Forgot Password State
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
+    
     val context = LocalContext.current
     val auth = remember { FirebaseAuth.getInstance() }
+
+    // Dynamic Saffron Gradient: Soft Peach in Light mode, Dark Warm Charcoal in Dark mode
+    val gradientColors = if (isDark) {
+        listOf(
+            Color(0xFF1E140C), // Dark Saffron Charcoal
+            Color(0xFF2C190B), // Saffron Shadow Dark
+            Color(0xFF3E2211)  // Dark Cocoa
+        )
+    } else {
+        listOf(
+            Color(0xFFFFF9F2), // Light Peach
+            Color(0xFFFFE0B2), // Warm Peach Saffron
+            Color(0xFFFFCC80)  // Golden Saffron
+        )
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFFFF9F2), // Light Saffron-Peach bg
-                        Color(0xFFFFE0B2), // Slightly darker warm peach
-                        Color(0xFFFFCC80)  // Saffron gold
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
+            .background(brush = Brush.verticalGradient(colors = gradientColors))
     ) {
-        // Language Toggle at top right (or centered top)
-        Box(
+        // Neatly Aligned Top Bar with status bar padding
+        Row(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 48.dp, end = 24.dp)
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            LanguageToggle(
+            LoginLanguageToggle(
                 currentLanguage = currentLanguage,
-                onLanguageChange = onLanguageChange
+                onLanguageChange = onLanguageChange,
+                isDark = isDark
             )
         }
 
@@ -167,9 +207,9 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(top = 80.dp) // Avoid overlapping with language toggle
+                .padding(top = 56.dp) // Leave clean space below top bar
         ) {
             // App Logo
             Image(
@@ -194,7 +234,7 @@ fun LoginScreen(
                     currentLanguage
                 ),
                 fontSize = 13.sp,
-                color = Color.DarkGray,
+                color = if (isDark) Color.LightGray else Color.DarkGray,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
@@ -222,8 +262,11 @@ fun LoginScreen(
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color(0xFFE65100),
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f),
-                    focusedLabelColor = Color(0xFFE65100)
+                    unfocusedBorderColor = if (isDark) Color.White.copy(alpha = 0.3f) else Color.Gray.copy(alpha = 0.5f),
+                    focusedLabelColor = Color(0xFFE65100),
+                    unfocusedLabelColor = if (isDark) Color.LightGray else Color.Gray,
+                    focusedTextColor = if (isDark) Color.White else Color.Black,
+                    unfocusedTextColor = if (isDark) Color.White else Color.Black
                 )
             )
 
@@ -254,10 +297,33 @@ fun LoginScreen(
                 },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color(0xFFE65100),
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f),
-                    focusedLabelColor = Color(0xFFE65100)
+                    unfocusedBorderColor = if (isDark) Color.White.copy(alpha = 0.3f) else Color.Gray.copy(alpha = 0.5f),
+                    focusedLabelColor = Color(0xFFE65100),
+                    unfocusedLabelColor = if (isDark) Color.LightGray else Color.Gray,
+                    focusedTextColor = if (isDark) Color.White else Color.Black,
+                    unfocusedTextColor = if (isDark) Color.White else Color.Black
                 )
             )
+
+            // Forgot Password (only in login mode)
+            if (!isSignUpMode) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Text(
+                        text = getLoginString(LoginStringKey.FORGOT_PASSWORD, currentLanguage),
+                        color = Color(0xFFE65100),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        modifier = Modifier
+                            .clickable { showForgotPasswordDialog = true }
+                            .padding(4.dp)
+                    )
+                }
+            }
 
             if (isSignUpMode) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -287,8 +353,11 @@ fun LoginScreen(
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFFE65100),
-                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f),
-                        focusedLabelColor = Color(0xFFE65100)
+                        unfocusedBorderColor = if (isDark) Color.White.copy(alpha = 0.3f) else Color.Gray.copy(alpha = 0.5f),
+                        focusedLabelColor = Color(0xFFE65100),
+                        unfocusedLabelColor = if (isDark) Color.LightGray else Color.Gray,
+                        focusedTextColor = if (isDark) Color.White else Color.Black,
+                        unfocusedTextColor = if (isDark) Color.White else Color.Black
                     )
                 )
             }
@@ -383,6 +452,205 @@ fun LoginScreen(
                     }
                     .padding(8.dp)
             )
+        }
+    }
+
+    // Forgot Password Dialog
+    if (showForgotPasswordDialog) {
+        var resetEmail by remember { mutableStateOf(email) }
+        var dialogError by remember { mutableStateOf("") }
+        var isSendingReset by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { showForgotPasswordDialog = false },
+            title = {
+                Text(
+                    text = getLoginString(LoginStringKey.RESET_TITLE, currentLanguage),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = getLoginString(LoginStringKey.RESET_DESC, currentLanguage),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    
+                    if (dialogError.isNotEmpty()) {
+                        Text(
+                            text = dialogError,
+                            color = Color.Red,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = resetEmail,
+                        onValueChange = {
+                            resetEmail = it
+                            dialogError = ""
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(getLoginString(LoginStringKey.EMAIL_LABEL, currentLanguage)) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val emailTrimmed = resetEmail.trim()
+                        if (emailTrimmed.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(emailTrimmed).matches()) {
+                            dialogError = getLoginString(LoginStringKey.ERROR_INVALID_EMAIL, currentLanguage)
+                        } else {
+                            isSendingReset = true
+                            auth.sendPasswordResetEmail(emailTrimmed)
+                                .addOnCompleteListener { task ->
+                                    isSendingReset = false
+                                    if (task.isSuccessful) {
+                                        Toast.makeText(
+                                            context,
+                                            getLoginString(LoginStringKey.RESET_LINK_SENT, currentLanguage),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        showForgotPasswordDialog = false
+                                    } else {
+                                        dialogError = task.exception?.localizedMessage ?: "Error sending reset email."
+                                    }
+                                }
+                        }
+                    },
+                    enabled = !isSendingReset
+                ) {
+                    if (isSendingReset) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                    } else {
+                        Text(
+                            text = getLoginString(LoginStringKey.SEND_LINK, currentLanguage),
+                            color = Color(0xFFE65100),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showForgotPasswordDialog = false },
+                    enabled = !isSendingReset
+                ) {
+                    Text(text = getLoginString(LoginStringKey.CANCEL, currentLanguage))
+                }
+            }
+        )
+    }
+}
+
+// Custom LanguageToggle that matches design and provides high visibility in light/dark system themes
+@Composable
+fun LoginLanguageToggle(
+    currentLanguage: Language,
+    onLanguageChange: (Language) -> Unit,
+    isDark: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val options = listOf(Language.ENGLISH, Language.HINDI, Language.MARATHI)
+    val selectedIndex = options.indexOf(currentLanguage)
+
+    val transition = updateTransition(targetState = selectedIndex, label = "langToggle")
+    val slideOffset by transition.animateDp(
+        transitionSpec = { spring(dampingRatio = 0.8f, stiffness = 300f) },
+        label = "pillOffset"
+    ) { index ->
+        when (index) {
+            0 -> 0.dp
+            1 -> 56.dp
+            else -> 112.dp
+        }
+    }
+
+    // Toggle container color - high contrast to stay clearly visible
+    val containerBg = if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
+    val pillBg = if (isDark) Color(0xFF3E2D1C) else Color.White
+    val activeText = Color(0xFFE65100)
+    val inactiveText = if (isDark) Color.LightGray else Color.DarkGray
+
+    Box(
+        modifier = modifier
+            .width(176.dp)
+            .height(38.dp)
+            .background(containerBg, RoundedCornerShape(19.dp))
+            .padding(3.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        // Highlight Pill
+        Box(
+            modifier = Modifier
+                .offset(x = slideOffset)
+                .width(56.dp)
+                .fillMaxHeight()
+                .background(pillBg, RoundedCornerShape(16.dp))
+        )
+
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onLanguageChange(Language.ENGLISH) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "EN",
+                    color = if (currentLanguage == Language.ENGLISH) activeText else inactiveText,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onLanguageChange(Language.HINDI) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "हिंदी",
+                    color = if (currentLanguage == Language.HINDI) activeText else inactiveText,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onLanguageChange(Language.MARATHI) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "मराठी",
+                    color = if (currentLanguage == Language.MARATHI) activeText else inactiveText,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                )
+            }
         }
     }
 }

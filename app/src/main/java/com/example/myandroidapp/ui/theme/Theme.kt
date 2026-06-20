@@ -15,7 +15,14 @@ import androidx.compose.ui.platform.LocalContext
 private val DarkColorScheme = darkColorScheme(
     primary = SaffronPrimary,
     secondary = SaffronSecondary,
-    tertiary = SaffronTertiary
+    tertiary = SaffronTertiary,
+    background = Color(0xFF1E1A16),       // Deep Dark Warm Grey
+    surface = Color(0xFF2B2520),          // Lighter Dark Card surface
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+    onBackground = Color(0xFFEFE6DF),     // Warm Off-White
+    onSurface = Color(0xFFE5DCD5)         // Warm White
 )
 
 private val LightColorScheme = lightColorScheme(

@@ -115,29 +115,28 @@ fun OtpVerificationScreen(
                 onClick = {
                     if (otpCode.length != 6) {
                         errorMessage = "Please enter a valid 6-digit OTP code"
-                        return
-                    }
-                    isLoading = true
-                    errorMessage = ""
+                    } else {
+                        isLoading = true
+                        errorMessage = ""
 
-                    // If instant verification succeeded and verificationId is empty, route directly
-                    if (verificationId.isEmpty()) {
-                        isLoading = false
-                        onVerificationSuccess()
-                        return
-                    }
-
-                    val credential = PhoneAuthProvider.getCredential(verificationId, otpCode)
-                    auth.signInWithCredential(credential)
-                        .addOnCompleteListener { task ->
+                        // If instant verification succeeded and verificationId is empty, route directly
+                        if (verificationId.isEmpty()) {
                             isLoading = false
-                            if (task.isSuccessful) {
-                                Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
-                                onVerificationSuccess()
-                            } else {
-                                errorMessage = task.exception?.message ?: "Incorrect OTP code. Try again."
-                            }
+                            onVerificationSuccess()
+                        } else {
+                            val credential = PhoneAuthProvider.getCredential(verificationId, otpCode)
+                            auth.signInWithCredential(credential)
+                                .addOnCompleteListener { task ->
+                                    isLoading = false
+                                    if (task.isSuccessful) {
+                                        Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
+                                        onVerificationSuccess()
+                                    } else {
+                                        errorMessage = task.exception?.message ?: "Incorrect OTP code. Try again."
+                                    }
+                                }
                         }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

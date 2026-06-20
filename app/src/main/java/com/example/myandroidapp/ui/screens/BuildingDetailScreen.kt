@@ -50,8 +50,8 @@ fun BuildingDetailScreen(
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf(
-        BilingualText("Services", "सेवाएं"),
-        BilingualText("Officers", "अधिकारी")
+        BilingualText("Services", "सेवाएं", "सेवा"),
+        BilingualText("Officers", "अधिकारी", "अधिकारी")
     )
 
     Scaffold(
@@ -190,7 +190,11 @@ fun OutdoorMapViewCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (lang == Language.ENGLISH) "Get Directions" else "दिशानिर्देश प्राप्त करें",
+                    text = when (lang) {
+                        Language.ENGLISH -> "Get Directions"
+                        Language.HINDI -> "दिशानिर्देश प्राप्त करें"
+                        Language.MARATHI -> "दिशा-निर्देश मिळवा"
+                    },
                     fontWeight = FontWeight.Black,
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.primary
@@ -228,7 +232,11 @@ fun OutdoorMapViewCard(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = if (lang == Language.ENGLISH) "Directions" else "दिशानिर्देश",
+                    text = when (lang) {
+                        Language.ENGLISH -> "Directions"
+                        Language.HINDI -> "दिशानिर्देश"
+                        Language.MARATHI -> "दिशा-निर्देश"
+                    },
                     fontSize = 12.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -379,10 +387,11 @@ fun ServiceItem(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = if (lang == Language.ENGLISH)
-                            "Est. Time: ${service.estimatedMinutes} mins"
-                        else
-                            "अनुमानित समय: ${service.estimatedMinutes} मिनट",
+                        text = when (lang) {
+                            Language.ENGLISH -> "Est. Time: ${service.estimatedMinutes} mins"
+                            Language.HINDI -> "अनुमानित समय: ${service.estimatedMinutes} मिनट"
+                            Language.MARATHI -> "अंदाजे वेळ: ${service.estimatedMinutes} मिनिटे"
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.SemiBold
@@ -438,10 +447,11 @@ fun ServiceItem(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (lang == Language.ENGLISH)
-                                        "Required Documents Checklist"
-                                    else
-                                        "आवश्यक दस्तावेजों की सूची",
+                                    text = when (lang) {
+                                        Language.ENGLISH -> "Required Documents Checklist"
+                                        Language.HINDI -> "आवश्यक दस्तावेजों की सूची"
+                                        Language.MARATHI -> "आवश्यक कागदपत्रांची यादी"
+                                    },
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 13.sp,
                                     color = MaterialTheme.colorScheme.primary
@@ -485,10 +495,11 @@ fun ServiceItem(
                         contentPadding = PaddingValues(vertical = 12.dp)
                     ) {
                         Text(
-                            text = if (lang == Language.ENGLISH)
-                                "Start Route Navigation"
-                            else
-                                "मार्गदर्शन शुरू करें",
+                            text = when (lang) {
+                                Language.ENGLISH -> "Start Route Navigation"
+                                Language.HINDI -> "मार्गदर्शन शुरू करें"
+                                Language.MARATHI -> "मार्गदर्शन सुरू करा"
+                            },
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 14.sp
                         )
@@ -531,10 +542,11 @@ fun OfficersTab(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             placeholder = {
                 Text(
-                    text = if (lang == Language.ENGLISH)
-                        "Search officer name, designation, room..."
-                    else
-                        "अधिकारी का नाम, पद, कक्ष खोजें..."
+                    text = when (lang) {
+                        Language.ENGLISH -> "Search officer name, designation, room..."
+                        Language.HINDI -> "अधिकारी का नाम, पद, कक्ष खोजें..."
+                        Language.MARATHI -> "अधिकारी नाव, पद, खोली शोधा..."
+                    }
                 )
             },
             leadingIcon = {
@@ -564,10 +576,11 @@ fun OfficersTab(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (lang == Language.ENGLISH)
-                        "No officers found."
-                    else
-                        "कोई अधिकारी नहीं मिला।",
+                    text = when (lang) {
+                        Language.ENGLISH -> "No officers found."
+                        Language.HINDI -> "कोई अधिकारी नहीं मिला।"
+                        Language.MARATHI -> "कोणतेही अधिकारी आढळले नाहीत."
+                    },
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
@@ -690,9 +703,21 @@ fun OfficerCard(
                     }
                     
                     val statusText = when (officer.status) {
-                        PresenceStatus.PRESENT -> if (lang == Language.ENGLISH) "Available" else "उपलब्ध"
-                        PresenceStatus.MEETING -> if (lang == Language.ENGLISH) "In Meeting" else "बैठक में"
-                        PresenceStatus.ABSENT -> if (lang == Language.ENGLISH) "Unavailable" else "अनुपलब्ध"
+                        PresenceStatus.PRESENT -> when (lang) {
+                            Language.ENGLISH -> "Available"
+                            Language.HINDI -> "उपलब्ध"
+                            Language.MARATHI -> "उपलब्ध"
+                        }
+                        PresenceStatus.MEETING -> when (lang) {
+                            Language.ENGLISH -> "In Meeting"
+                            Language.HINDI -> "बैठक में"
+                            Language.MARATHI -> "बैठकीत"
+                        }
+                        PresenceStatus.ABSENT -> when (lang) {
+                            Language.ENGLISH -> "Unavailable"
+                            Language.HINDI -> "अनुपलब्ध"
+                            Language.MARATHI -> "अनुपलब्ध"
+                        }
                     }
 
                     Box(
@@ -719,7 +744,11 @@ fun OfficerCard(
 
             // Location Text (Separate full-width line to prevent button collision)
             Text(
-                text = "${if (lang == Language.ENGLISH) "Location" else "स्थान"}: ${officer.room}",
+                text = "${when (lang) {
+                    Language.ENGLISH -> "Location"
+                    Language.HINDI -> "स्थान"
+                    Language.MARATHI -> "स्थान"
+                }}: ${officer.room}",
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "267866959770",
+    "project_id": "margdarshak-app-45ffe",
+    "storage_bucket": "margdarshak-app-45ffe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267866959770:android:4ad4f0a12f0efd1ee39423",
+        "android_client_info": {
+          "package_name": "com.example.myandroidapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD41UiduPpBQGi6GM7LdqVJDw_XpSLNXEk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

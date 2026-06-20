@@ -29,11 +29,15 @@ import com.example.myandroidapp.data.Service
 import com.example.myandroidapp.ui.screens.BuildingDetailScreen
 import com.example.myandroidapp.ui.screens.MainHubScreen
 import com.example.myandroidapp.ui.screens.NavigationScreen
+import com.example.myandroidapp.ui.screens.LoginScreen
+import com.example.myandroidapp.ui.screens.OtpVerificationScreen
 import com.example.myandroidapp.ui.theme.MyAndroidAppTheme
 import kotlinx.coroutines.delay
 
 sealed interface Screen {
     object Splash : Screen
+    object Login : Screen
+    data class OtpVerification(val mobileNumber: String, val verificationId: String) : Screen
     object MainHub : Screen
     data class BuildingDetail(val building: Building) : Screen
     data class Navigation(val service: Service, val building: Building) : Screen
@@ -45,7 +49,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyAndroidAppTheme {
-                var currentScreen by remember { mutableStateOf<Screen>(Screen.Splash) }
+                val auth = remember { com.google.firebase.auth.FirebaseAuth.getInstance() }
+                val initialScreen = if (auth.currentUser != null) Screen.MainHub else Screen.Splash
+                
+                var currentScreen by remember { mutableStateOf<Screen>(initialScreen) }
                 var currentLanguage by remember { mutableStateOf(Language.ENGLISH) }
 
                 Surface(
@@ -53,13 +60,41 @@ class MainActivity : ComponentActivity() {
                 ) {
                     when (val screen = currentScreen) {
                         is Screen.Splash -> {
-                            SplashScreen(onTimeout = { currentScreen = Screen.MainHub })
+                            SplashScreen(onTimeout = { 
+                                currentScreen = if (auth.currentUser != null) Screen.MainHub else Screen.Login
+                            })
+                        }
+                        is Screen.Login -> {
+                            LoginScreen(
+                                onVerificationSent = { mobile, verificationId ->
+                                    currentScreen = Screen.OtpVerification(mobile, verificationId)
+                                }
+                            )
+                        }
+                        is Screen.OtpVerification -> {
+                            BackHandler {
+                                currentScreen = Screen.Login
+                            }
+                            OtpVerificationScreen(
+                                mobileNumber = screen.mobileNumber,
+                                verificationId = screen.verificationId,
+                                onVerificationSuccess = {
+                                    currentScreen = Screen.MainHub
+                                },
+                                onBackToLogin = {
+                                    currentScreen = Screen.Login
+                                }
+                            )
                         }
                         is Screen.MainHub -> {
                             MainHubScreen(
                                 currentLanguage = currentLanguage,
                                 onLanguageChange = { currentLanguage = it },
-                                onBuildingSelect = { currentScreen = Screen.BuildingDetail(it) }
+                                onBuildingSelect = { currentScreen = Screen.BuildingDetail(it) },
+                                onLogout = {
+                                    auth.signOut()
+                                    currentScreen = Screen.Login
+                                }
                             )
                         }
                         is Screen.BuildingDetail -> {

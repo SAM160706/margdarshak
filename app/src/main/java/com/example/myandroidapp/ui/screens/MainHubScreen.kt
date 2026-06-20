@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.HorizontalRule
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,7 +64,8 @@ fun Modifier.bounceClick(onClick: () -> Unit = {}): Modifier = composed {
 fun MainHubScreen(
     currentLanguage: Language,
     onLanguageChange: (Language) -> Unit,
-    onBuildingSelect: (Building) -> Unit
+    onBuildingSelect: (Building) -> Unit,
+    onLogout: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     
@@ -102,26 +104,53 @@ fun MainHubScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (currentLanguage == Language.ENGLISH) "Margdarshak" else "मार्गदर्शक",
+                            text = when (currentLanguage) {
+                                Language.ENGLISH -> "Margdarshak"
+                                Language.HINDI -> "मार्गदर्शक"
+                                Language.MARATHI -> "मार्गदर्शक"
+                            },
                             fontWeight = FontWeight.Black,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             color = Color.White
                         )
                         Text(
-                            text = if (currentLanguage == Language.ENGLISH) 
-                                "Guiding you inside, step by step" else "प्रत्येक इमारतीत मार्गदर्शन करते",
-                            fontSize = 12.sp,
+                            text = when (currentLanguage) {
+                                Language.ENGLISH -> "Guiding you inside, step by step"
+                                Language.HINDI -> "हर इमारत के अंदर आसान राह"
+                                Language.MARATHI -> "प्रत्येक इमारतीत सोपी वाट"
+                            },
+                            fontSize = 11.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )
                     }
                     
-                    // Custom Sliding Capsule Language Toggle
-                    LanguageToggle(
-                        currentLanguage = currentLanguage,
-                        onLanguageChange = onLanguageChange
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Custom Sliding Capsule Language Toggle
+                        LanguageToggle(
+                            currentLanguage = currentLanguage,
+                            onLanguageChange = onLanguageChange
+                        )
+
+                        // Logout button
+                        IconButton(
+                            onClick = onLogout,
+                            modifier = Modifier
+                                .size(38.dp)
+                                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = "Logout",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -141,10 +170,11 @@ fun MainHubScreen(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text(
-                        text = if (currentLanguage == Language.ENGLISH)
-                            "Search buildings, services..."
-                        else
-                            "भवन, सेवा खोजें..."
+                        text = when (currentLanguage) {
+                            Language.ENGLISH -> "Search buildings, services..."
+                            Language.HINDI -> "भवन, सेवा खोजें..."
+                            Language.MARATHI -> "इमारती, सेवा शोधा..."
+                        }
                     )
                 },
                 leadingIcon = {
@@ -167,7 +197,11 @@ fun MainHubScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = if (currentLanguage == Language.ENGLISH) "Select Building" else "भवन का चयन करें",
+                text = when (currentLanguage) {
+                    Language.ENGLISH -> "Select Building"
+                    Language.HINDI -> "भवन का चयन करें"
+                    Language.MARATHI -> "इमारत निवडा"
+                },
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.onBackground
@@ -183,10 +217,11 @@ fun MainHubScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (currentLanguage == Language.ENGLISH)
-                            "No buildings found."
-                        else
-                            "कोई भवन नहीं मिला।",
+                        text = when (currentLanguage) {
+                            Language.ENGLISH -> "No buildings found."
+                            Language.HINDI -> "कोई भवन नहीं मिला।"
+                            Language.MARATHI -> "कोणतीही इमारत आढळली नाही."
+                        },
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
@@ -215,7 +250,7 @@ fun LanguageToggle(
     onLanguageChange: (Language) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val options = listOf(Language.ENGLISH, Language.HINDI)
+    val options = listOf(Language.ENGLISH, Language.HINDI, Language.MARATHI)
     val selectedIndex = options.indexOf(currentLanguage)
 
     // Smooth sliding animation
@@ -224,12 +259,16 @@ fun LanguageToggle(
         transitionSpec = { spring(dampingRatio = 0.8f, stiffness = 300f) },
         label = "pillOffset"
     ) { index ->
-        if (index == 0) 0.dp else 60.dp
+        when (index) {
+            0 -> 0.dp
+            1 -> 56.dp
+            else -> 112.dp
+        }
     }
 
     Box(
         modifier = modifier
-            .width(128.dp)
+            .width(176.dp)
             .height(38.dp)
             .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(19.dp))
             .padding(3.dp),
@@ -239,7 +278,7 @@ fun LanguageToggle(
         Box(
             modifier = Modifier
                 .offset(x = slideOffset)
-                .width(62.dp)
+                .width(56.dp)
                 .fillMaxHeight()
                 .background(Color.White, RoundedCornerShape(16.dp))
         )
@@ -262,7 +301,7 @@ fun LanguageToggle(
                     text = "EN",
                     color = if (currentLanguage == Language.ENGLISH) Color(0xFFE65100) else Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 11.sp
                 )
             }
             Box(
@@ -279,7 +318,24 @@ fun LanguageToggle(
                     text = "हिंदी",
                     color = if (currentLanguage == Language.HINDI) Color(0xFFE65100) else Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 11.sp
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onLanguageChange(Language.MARATHI) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "मराठी",
+                    color = if (currentLanguage == Language.MARATHI) Color(0xFFE65100) else Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
                 )
             }
         }
@@ -391,10 +447,11 @@ fun BuildingCard(
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = if (lang == Language.ENGLISH)
-                            "$deptCount Depts • $serviceCount Services"
-                        else
-                            "$deptCount विभाग • $serviceCount सेवाएं",
+                        text = when (lang) {
+                            Language.ENGLISH -> "$deptCount Depts • $serviceCount Services"
+                            Language.HINDI -> "$deptCount विभाग • $serviceCount सेवाएं"
+                            Language.MARATHI -> "$deptCount विभाग • $serviceCount सेवा"
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary

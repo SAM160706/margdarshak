@@ -138,10 +138,11 @@ fun NavigationScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (currentLanguage == Language.ENGLISH)
-                                "Step ${currentStepIndex + 1}/${service.routeSteps.size}"
-                            else
-                                "चरण ${currentStepIndex + 1}/${service.routeSteps.size}",
+                            text = when (currentLanguage) {
+                                Language.ENGLISH -> "Step ${currentStepIndex + 1}/${service.routeSteps.size}"
+                                Language.HINDI -> "चरण ${currentStepIndex + 1}/${service.routeSteps.size}"
+                                Language.MARATHI -> "टप्पा ${currentStepIndex + 1}/${service.routeSteps.size}"
+                            },
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold
@@ -180,7 +181,11 @@ fun NavigationScreen(
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                         ) {
                             Text(
-                                text = if (currentLanguage == Language.ENGLISH) "Prev" else "पीछे",
+                                text = when (currentLanguage) {
+                                    Language.ENGLISH -> "Prev"
+                                    Language.HINDI -> "पीछे"
+                                    Language.MARATHI -> "मागे"
+                                },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             )
@@ -197,9 +202,17 @@ fun NavigationScreen(
                         ) {
                             Text(
                                 text = if (isPlaying) {
-                                    if (currentLanguage == Language.ENGLISH) "Pause ⏸" else "रोकें ⏸"
+                                    when (currentLanguage) {
+                                        Language.ENGLISH -> "Pause ⏸"
+                                        Language.HINDI -> "रोकें ⏸"
+                                        Language.MARATHI -> "थांबा ⏸"
+                                    }
                                 } else {
-                                    if (currentLanguage == Language.ENGLISH) "Play ▶" else "चलाएं ▶"
+                                    when (currentLanguage) {
+                                        Language.ENGLISH -> "Play ▶"
+                                        Language.HINDI -> "चलाएं ▶"
+                                        Language.MARATHI -> "सुरू ▶"
+                                    }
                                 },
                                 fontWeight = FontWeight.Black,
                                 fontSize = 14.sp
@@ -225,7 +238,11 @@ fun NavigationScreen(
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                         ) {
                             Text(
-                                text = if (currentLanguage == Language.ENGLISH) "Next" else "आगे",
+                                text = when (currentLanguage) {
+                                    Language.ENGLISH -> "Next"
+                                    Language.HINDI -> "आगे"
+                                    Language.MARATHI -> "पुढे"
+                                },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             )

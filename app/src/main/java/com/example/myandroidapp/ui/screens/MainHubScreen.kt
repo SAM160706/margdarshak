@@ -22,7 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.HorizontalRule
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -126,28 +126,29 @@ fun MainHubScreen(
                         )
                     }
                     
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        // Custom Sliding Capsule Language Toggle
+                        // Compact custom Language Toggle
                         LanguageToggle(
                             currentLanguage = currentLanguage,
-                            onLanguageChange = onLanguageChange
+                            onLanguageChange = onLanguageChange,
+                            compact = true
                         )
 
-                        // Logout button
+                        // Logout button below
                         IconButton(
                             onClick = onLogout,
                             modifier = Modifier
-                                .size(38.dp)
-                                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                                .size(32.dp)
+                                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ExitToApp,
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                 contentDescription = "Logout",
                                 tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -248,29 +249,44 @@ fun MainHubScreen(
 fun LanguageToggle(
     currentLanguage: Language,
     onLanguageChange: (Language) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
 ) {
     val options = listOf(Language.ENGLISH, Language.HINDI, Language.MARATHI)
     val selectedIndex = options.indexOf(currentLanguage)
 
-    // Smooth sliding animation
+    val width = if (compact) 138.dp else 176.dp
+    val height = if (compact) 30.dp else 38.dp
+    val pillWidth = if (compact) 44.dp else 56.dp
+    val cornerRadius = if (compact) 15.dp else 19.dp
+    val pillCornerRadius = if (compact) 12.dp else 16.dp
+    val fontSize = if (compact) 9.sp else 11.sp
+
     val transition = updateTransition(targetState = selectedIndex, label = "langToggle")
     val slideOffset by transition.animateDp(
         transitionSpec = { spring(dampingRatio = 0.8f, stiffness = 300f) },
         label = "pillOffset"
     ) { index ->
-        when (index) {
-            0 -> 0.dp
-            1 -> 56.dp
-            else -> 112.dp
+        if (compact) {
+            when (index) {
+                0 -> 0.dp
+                1 -> 44.dp
+                else -> 88.dp
+            }
+        } else {
+            when (index) {
+                0 -> 0.dp
+                1 -> 56.dp
+                else -> 112.dp
+            }
         }
     }
 
     Box(
         modifier = modifier
-            .width(176.dp)
-            .height(38.dp)
-            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(19.dp))
+            .width(width)
+            .height(height)
+            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(cornerRadius))
             .padding(3.dp),
         contentAlignment = Alignment.CenterStart
     ) {
@@ -278,9 +294,9 @@ fun LanguageToggle(
         Box(
             modifier = Modifier
                 .offset(x = slideOffset)
-                .width(56.dp)
+                .width(pillWidth)
                 .fillMaxHeight()
-                .background(Color.White, RoundedCornerShape(16.dp))
+                .background(Color.White, RoundedCornerShape(pillCornerRadius))
         )
 
         Row(
@@ -301,7 +317,7 @@ fun LanguageToggle(
                     text = "EN",
                     color = if (currentLanguage == Language.ENGLISH) Color(0xFFE65100) else Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
+                    fontSize = fontSize
                 )
             }
             Box(
@@ -318,7 +334,7 @@ fun LanguageToggle(
                     text = "हिंदी",
                     color = if (currentLanguage == Language.HINDI) Color(0xFFE65100) else Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
+                    fontSize = fontSize
                 )
             }
             Box(
@@ -335,7 +351,7 @@ fun LanguageToggle(
                     text = "मराठी",
                     color = if (currentLanguage == Language.MARATHI) Color(0xFFE65100) else Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
+                    fontSize = fontSize
                 )
             }
         }

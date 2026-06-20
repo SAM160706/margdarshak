@@ -10,8 +10,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -208,17 +210,34 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(top = 56.dp) // Leave clean space below top bar
+                .padding(top = 80.dp, bottom = 24.dp)
         ) {
-            // App Logo
-            Image(
-                painter = painterResource(id = R.drawable.logo_margdarshak),
-                contentDescription = "Margdarshak Logo",
-                modifier = Modifier.size(110.dp)
-            )
+            // App Logo as a beautiful rounded card badge
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isDark) Color(0xFF2C2520) else Color.White
+                ),
+                modifier = Modifier
+                    .size(100.dp)
+                    .padding(bottom = 8.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_margdarshak),
+                        contentDescription = "Margdarshak Logo",
+                        modifier = Modifier.size(76.dp)
+                    )
+                }
+            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = getLoginString(LoginStringKey.TITLE, currentLanguage),

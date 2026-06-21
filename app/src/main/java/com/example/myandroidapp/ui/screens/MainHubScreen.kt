@@ -38,9 +38,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myandroidapp.data.Building
-import com.example.myandroidapp.data.Language
-import com.example.myandroidapp.data.SampleData
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import com.example.myandroidapp.data.*
+
+sealed interface SearchResult {
+    data class BuildingResult(val building: Building) : SearchResult
+    data class ServiceResult(val service: Service, val building: Building) : SearchResult
+    data class OfficerResult(val officer: Officer, val building: Building) : SearchResult
+}
 
 // Custom Spring-Scale Bounce modifier for premium tactile clicks
 fun Modifier.bounceClick(onClick: () -> Unit = {}): Modifier = composed {
@@ -68,19 +74,50 @@ fun Modifier.bounceClick(onClick: () -> Unit = {}): Modifier = composed {
 fun MainHubScreen(
     currentLanguage: Language,
     onLanguageChange: (Language) -> Unit,
-    onBuildingSelect: (Building) -> Unit,
+    onBuildingSelect: (Building, Int) -> Unit,
+    onServiceSelect: (Service, Building) -> Unit,
     onLogout: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     
-    val filteredBuildings = remember(searchQuery, currentLanguage) {
-        SampleData.buildings.filter { building ->
-            building.name.get(currentLanguage).contains(searchQuery, ignoreCase = true) ||
-            building.description.get(currentLanguage).contains(searchQuery, ignoreCase = true) ||
-            building.departments.any { dept ->
-                dept.name.get(currentLanguage).contains(searchQuery, ignoreCase = true) ||
-                dept.services.any { service ->
-                    service.name.get(currentLanguage).contains(searchQuery, ignoreCase = true)
+    val searchResults = remember(searchQuery, currentLanguage) {
+        val query = searchQuery.trim()
+        if (query.isEmpty()) {
+            SampleData.buildings.map { SearchResult.BuildingResult(it) }
+        } else {
+            val list = mutableListOf<SearchResult>()
+            SampleData.buildings.forEach { building ->
+                val matchBuilding = building.name.get(currentLanguage).contains(query, ignoreCase = true) ||
+                        building.description.get(currentLanguage).contains(query, ignoreCase = true) ||
+                        building.address.get(currentLanguage).contains(query, ignoreCase = true)
+                if (matchBuilding) {
+                    list.add(SearchResult.BuildingResult(building))
+                }
+                
+                building.departments.forEach { dept ->
+                    dept.services.forEach { service ->
+                        val matchService = service.name.get(currentLanguage).contains(query, ignoreCase = true) ||
+                                service.description.get(currentLanguage).contains(query, ignoreCase = true)
+                        if (matchService) {
+                            list.add(SearchResult.ServiceResult(service, building))
+                        }
+                    }
+                    
+                    dept.officers.forEach { officer ->
+                        val matchOfficer = officer.name.get(currentLanguage).contains(query, ignoreCase = true) ||
+                                officer.designation.get(currentLanguage).contains(query, ignoreCase = true) ||
+                                officer.room.contains(query, ignoreCase = true)
+                        if (matchOfficer) {
+                            list.add(SearchResult.OfficerResult(officer, building))
+                        }
+                    }
+                }
+            }
+            list.distinctBy {
+                when (it) {
+                    is SearchResult.BuildingResult -> "b_${it.building.id}"
+                    is SearchResult.ServiceResult -> "s_${it.service.id}"
+                    is SearchResult.OfficerResult -> "o_${it.officer.id}"
                 }
             }
         }
@@ -216,7 +253,7 @@ fun MainHubScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (filteredBuildings.isEmpty()) {
+            if (searchResults.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -225,9 +262,9 @@ fun MainHubScreen(
                 ) {
                     Text(
                         text = when (currentLanguage) {
-                            Language.ENGLISH -> "No buildings found."
-                            Language.HINDI -> "कोई भवन नहीं मिला।"
-                            Language.MARATHI -> "कोणतीही इमारत आढळली नाही."
+                            Language.ENGLISH -> "No results found."
+                            Language.HINDI -> "कोई परिणाम नहीं मिला।"
+                            Language.MARATHI -> "कोणतेही निकाल आढळले नाहीत."
                         },
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -240,12 +277,32 @@ fun MainHubScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
-                    items(filteredBuildings) { building ->
-                        BuildingCard(
-                            building = building,
-                            lang = currentLanguage,
-                            onClick = { onBuildingSelect(building) }
-                        )
+                    items(searchResults) { result ->
+                        when (result) {
+                            is SearchResult.BuildingResult -> {
+                                BuildingCard(
+                                    building = result.building,
+                                    lang = currentLanguage,
+                                    onClick = { onBuildingSelect(result.building, 0) }
+                                )
+                            }
+                            is SearchResult.ServiceResult -> {
+                                ServiceResultCard(
+                                    service = result.service,
+                                    building = result.building,
+                                    lang = currentLanguage,
+                                    onClick = { onServiceSelect(result.service, result.building) }
+                                )
+                            }
+                            is SearchResult.OfficerResult -> {
+                                OfficerResultCard(
+                                    officer = result.officer,
+                                    building = result.building,
+                                    lang = currentLanguage,
+                                    onClick = { onBuildingSelect(result.building, 1) }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -496,6 +553,334 @@ fun BuildingCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ServiceResultCard(
+    service: Service,
+    building: Building,
+    lang: Language,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .bounceClick(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            // Elegant gradient graphic representing a "Service"
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color(0xFFE65100), Color(0xFFFFB300))
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Service",
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = when (lang) {
+                            Language.ENGLISH -> "SERVICE"
+                            Language.HINDI -> "सेवा"
+                            Language.MARATHI -> "सेवा"
+                        },
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                }
+            }
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = service.name.get(lang),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Proceed",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = service.description.get(lang),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.height(32.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = "Building",
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = building.name.get(lang),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = when (lang) {
+                            Language.ENGLISH -> "Navigate to Service"
+                            Language.HINDI -> "सेवा तक मार्गनिर्देशन"
+                            Language.MARATHI -> "सेवेसाठी मार्गनिर्देशन"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OfficerResultCard(
+    officer: Officer,
+    building: Building,
+    lang: Language,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .bounceClick(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            // Display officer image or a beautiful placeholder gradient
+            if (officer.drawableName.isNotEmpty()) {
+                val resourceId = remember(officer.drawableName) {
+                    context.resources.getIdentifier(officer.drawableName, "drawable", context.packageName)
+                }
+                if (resourceId != 0) {
+                    Image(
+                        painter = painterResource(id = resourceId),
+                        contentDescription = officer.name.get(lang),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    OfficerPlaceholder(lang)
+                }
+            } else {
+                OfficerPlaceholder(lang)
+            }
+            
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = officer.name.get(lang),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "View",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = officer.designation.get(lang),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.height(32.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = "Location",
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "${building.name.get(lang)} • Rm ${officer.room}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val statusText = when (officer.status) {
+                    PresenceStatus.PRESENT -> when (lang) {
+                        Language.ENGLISH -> "Available"
+                        Language.HINDI -> "उपलब्ध"
+                        Language.MARATHI -> "उपलब्ध"
+                    }
+                    PresenceStatus.MEETING -> when (lang) {
+                        Language.ENGLISH -> "In Meeting"
+                        Language.HINDI -> "बैठक में"
+                        Language.MARATHI -> "बैठकीत"
+                    }
+                    PresenceStatus.ABSENT -> when (lang) {
+                        Language.ENGLISH -> "Out of Office"
+                        Language.HINDI -> "कार्यालय से बाहर"
+                        Language.MARATHI -> "कार्यालयाबाहेर"
+                    }
+                }
+                val statusColor = when (officer.status) {
+                    PresenceStatus.PRESENT -> Color(0xFF2E7D32)
+                    PresenceStatus.MEETING -> Color(0xFFEF6C00)
+                    PresenceStatus.ABSENT -> Color(0xFFC62828)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = statusColor.copy(alpha = 0.08f),
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OfficerPlaceholder(lang: Language) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFFE65100), Color(0xFFFFB300))
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Officer",
+                tint = Color.White,
+                modifier = Modifier.size(36.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = when (lang) {
+                    Language.ENGLISH -> "OFFICER"
+                    Language.HINDI -> "अधिकारी"
+                    Language.MARATHI -> "अधिकारी"
+                },
+                color = Color.White,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black
+            )
         }
     }
 }

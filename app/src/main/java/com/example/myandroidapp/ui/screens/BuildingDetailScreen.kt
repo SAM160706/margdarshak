@@ -46,9 +46,10 @@ fun BuildingDetailScreen(
     building: Building,
     currentLanguage: Language,
     onBackClick: () -> Unit,
-    onServiceSelect: (Service) -> Unit
+    onServiceSelect: (Service) -> Unit,
+    initialTab: Int = 0
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(initialTab) }
     val tabs = listOf(
         BilingualText("Services", "सेवाएं", "सेवा"),
         BilingualText("Officers", "अधिकारी", "अधिकारी")

@@ -37,7 +37,7 @@ sealed interface Screen {
     object Splash : Screen
     object Login : Screen
     object MainHub : Screen
-    data class BuildingDetail(val building: Building) : Screen
+    data class BuildingDetail(val building: Building, val initialTab: Int = 0) : Screen
     data class Navigation(val service: Service, val building: Building) : Screen
 }
 
@@ -75,7 +75,12 @@ class MainActivity : ComponentActivity() {
                             MainHubScreen(
                                 currentLanguage = currentLanguage,
                                 onLanguageChange = { currentLanguage = it },
-                                onBuildingSelect = { currentScreen = Screen.BuildingDetail(it) },
+                                onBuildingSelect = { building, tab ->
+                                    currentScreen = Screen.BuildingDetail(building, tab)
+                                },
+                                onServiceSelect = { service, building ->
+                                    currentScreen = Screen.Navigation(service, building)
+                                },
                                 onLogout = {
                                     auth.signOut()
                                     currentScreen = Screen.Login
@@ -90,7 +95,8 @@ class MainActivity : ComponentActivity() {
                                 building = screen.building,
                                 currentLanguage = currentLanguage,
                                 onBackClick = { currentScreen = Screen.MainHub },
-                                onServiceSelect = { currentScreen = Screen.Navigation(it, screen.building) }
+                                onServiceSelect = { currentScreen = Screen.Navigation(it, screen.building) },
+                                initialTab = screen.initialTab
                             )
                         }
                         is Screen.Navigation -> {

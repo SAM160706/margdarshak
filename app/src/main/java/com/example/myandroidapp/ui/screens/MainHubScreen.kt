@@ -13,6 +13,9 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -230,9 +233,11 @@ fun MainHubScreen(
                     )
                 }
             } else {
-                LazyColumn(
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
                     items(filteredBuildings) { building ->
@@ -367,11 +372,15 @@ fun BuildingCard(
     lang: Language,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    val deptCount = building.departments.size
+    val serviceCount = building.departments.sumOf { it.services.size }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .bounceClick(onClick = onClick), // spring bouncing micro-interaction
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -380,7 +389,6 @@ fun BuildingCard(
     ) {
         Column {
             if (building.drawableName.isNotEmpty()) {
-                val context = LocalContext.current
                 val resourceId = remember(building.drawableName) {
                     context.resources.getIdentifier(building.drawableName, "drawable", context.packageName)
                 }
@@ -390,80 +398,88 @@ fun BuildingCard(
                         contentDescription = building.name.get(lang),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(160.dp),
+                            .height(100.dp),
                         contentScale = ContentScale.Crop
                     )
                 }
             }
             Column(
-                modifier = Modifier.padding(20.dp)
+                modifier = Modifier.padding(12.dp)
             ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = building.name.get(lang),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Proceed",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = building.description.get(lang),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 20.sp
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            HorizontalDivider(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-            
-            Spacer(modifier = Modifier.height(14.dp))
-            
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = "Address",
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(16.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = building.name.get(lang),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Proceed",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
                 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 
                 Text(
-                    text = building.address.get(lang),
+                    text = building.description.get(lang),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.weight(1f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.height(32.dp) // Fixed height to keep grids aligned
                 )
 
-                // Premium stats badge
-                val deptCount = building.departments.size
-                val serviceCount = building.departments.sumOf { it.services.size }
+                Spacer(modifier = Modifier.height(8.dp))
                 
+                HorizontalDivider(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = "Address",
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.width(2.dp))
+                    
+                    Text(
+                        text = building.address.get(lang),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
                 Box(
                     modifier = Modifier
+                        .fillMaxWidth()
                         .background(
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            shape = RoundedCornerShape(10.dp)
+                            shape = RoundedCornerShape(6.dp)
                         )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = when (lang) {
@@ -472,12 +488,14 @@ fun BuildingCard(
                             Language.MARATHI -> "$deptCount विभाग • $serviceCount सेवा"
                         },
                         style = MaterialTheme.typography.labelSmall,
+                        fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }
         }
     }
-}
 }
